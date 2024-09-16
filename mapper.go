@@ -71,7 +71,7 @@ func (m Mapper) ToMap(a any) map[string]any {
 	for i := range v.NumField() {
 		field := typ.Field(i)
 
-		if field.Type.Kind() == reflect.Struct {
+		if field.Type.Kind() == reflect.Struct && v.Field(i).Type() != reflect.TypeOf(time.Time{}) {
 			nested := ToMap(v.Field(i).Interface(), m.Tag, m.Omitempty, m.Flatten)
 			if field.Anonymous || m.Flatten {
 				// flatten nested structs

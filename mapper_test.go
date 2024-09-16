@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -73,7 +74,35 @@ func TestToMap(t *testing.T) {
 			Age     int     `json:"age,omitempty"`
 			Address Address `json:"address,omitempty"`
 		}
+
+		Nested struct {
+			Street    string `db:"street,omitempty"`
+			NestedInt int    `db:"nested_int,omitmepty"`
+		}
+
+		TestStruct struct {
+			Bool      bool      `db:"bool_t,omitempty"`
+			CreatedAt time.Time `db:"created_at,omitempty"`
+			ID        int       `db:"id"`
+			Int       int       `db:"int_t,omitempty"`
+			Name      string    `db:"name"`
+			Nested
+		}
 	)
+
+	var testDate = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	var filledStruct = TestStruct{
+		Bool:      true,
+		CreatedAt: testDate,
+		ID:        1,
+		Int:       2,
+		Name:      "test",
+		Nested: Nested{
+			Street:    "street",
+			NestedInt: 3,
+		},
+	}
 
 	type args struct {
 		a         any
@@ -195,6 +224,24 @@ func TestToMap(t *testing.T) {
 				"street": "123 Main St",
 				"city":   "Anytown",
 				"zip":    12345,
+			},
+		},
+		{
+			name: "test struct from sqlhelp package",
+			args: args{
+				a:         filledStruct,
+				tag:       "db",
+				omitempty: true,
+				flatten:   true,
+			},
+			want: map[string]any{
+				"bool_t":     true,
+				"created_at": testDate,
+				"id":         1,
+				"int_t":      2,
+				"name":       "test",
+				"street":     "street",
+				"nested_int": 3,
 			},
 		},
 	}
@@ -553,7 +600,12 @@ func Test_tagName(t *testing.T) {
 		structWithUnexportedFields struct {
 			name string
 		}
+		structWithTime struct {
+			CreatedAt time.Time `json:"created_at,omitempty"`
+		}
 	)
+
+	var testTime = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	type args struct {
 		fld       reflect.StructField
@@ -691,13 +743,24 @@ func Test_tagName(t *testing.T) {
 		{
 			name: "struct with unexported fields",
 			args: args{
-				fld:       field(t, structWithUnexportedFields{name: "Linter is an ass"}, 0),
-				val:       value(t, structWithUnexportedFields{name: "Linter fuck you"}, 0),
+				fld:       field(t, structWithUnexportedFields{name: "Linter please shut up"}, 0),
+				val:       value(t, structWithUnexportedFields{name: "Linter i hate you"}, 0),
 				tag:       "json",
 				omitempty: false,
 			},
 			want:    "",
 			wantErr: true,
+		},
+		{
+			name: "time",
+			args: args{
+				fld:       field(t, structWithTime{CreatedAt: testTime}, 0),
+				val:       value(t, structWithTime{CreatedAt: testTime}, 0),
+				tag:       "json",
+				omitempty: true,
+			},
+			want:    "created_at",
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
