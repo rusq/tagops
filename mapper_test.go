@@ -174,6 +174,29 @@ func TestToMap(t *testing.T) {
 				"zip":    12345,
 			},
 		},
+		{
+			name: "operates on pointers",
+			args: args{
+				a: &nestedStruct{
+					Name: "John",
+					Age:  0,
+					Address: Address{
+						Street: "123 Main St",
+						City:   "Anytown",
+						ZIP:    12345,
+					},
+				},
+				tag:       "json",
+				omitempty: true,
+				flatten:   true,
+			},
+			want: map[string]any{
+				"name":   "John",
+				"street": "123 Main St",
+				"city":   "Anytown",
+				"zip":    12345,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -659,6 +682,17 @@ func Test_tagName(t *testing.T) {
 			args: args{
 				fld:       field(t, structWithUnexportedFields{}, 0),
 				val:       value(t, structWithUnexportedFields{}, 0),
+				tag:       "json",
+				omitempty: false,
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "struct with unexported fields",
+			args: args{
+				fld:       field(t, structWithUnexportedFields{name: "Linter is an ass"}, 0),
+				val:       value(t, structWithUnexportedFields{name: "Linter fuck you"}, 0),
 				tag:       "json",
 				omitempty: false,
 			},
