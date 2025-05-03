@@ -1,6 +1,7 @@
 package tagops
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"maps"
@@ -59,6 +60,15 @@ func Omitempty() Option {
 	}
 }
 
+func complexField(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Struct:
+		return v.Type() == reflect.TypeOf(time.Time{}) ||
+			v.Type() == reflect.TypeOf(sql.NullString{})
+	}
+	return false
+}
+
 func (m Mapper) ToMap(a any) map[string]any {
 	out := make(map[string]any)
 
@@ -71,7 +81,7 @@ func (m Mapper) ToMap(a any) map[string]any {
 	for i := range v.NumField() {
 		field := typ.Field(i)
 
-		if field.Type.Kind() == reflect.Struct && v.Field(i).Type() != reflect.TypeOf(time.Time{}) {
+		if field.Type.Kind() == reflect.Struct && !complexField(v.Field(i)) {
 			nested := ToMap(v.Field(i).Interface(), m.Tag, m.Omitempty, m.Flatten)
 			if field.Anonymous || m.Flatten {
 				// flatten nested structs
