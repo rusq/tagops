@@ -1,6 +1,7 @@
 package tagops
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"maps"
@@ -59,6 +60,15 @@ func Omitempty() Option {
 	}
 }
 
+func complexField(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Struct:
+		return v.Type() == reflect.TypeOf(time.Time{}) ||
+			v.Type() == reflect.TypeOf(sql.NullString{})
+	}
+	return false
+}
+
 func (m Mapper) ToMap(a any) map[string]any {
 	out := make(map[string]any)
 
@@ -71,7 +81,7 @@ func (m Mapper) ToMap(a any) map[string]any {
 	for i := range v.NumField() {
 		field := typ.Field(i)
 
-		if field.Type.Kind() == reflect.Struct && v.Field(i).Type() != reflect.TypeOf(time.Time{}) {
+		if field.Type.Kind() == reflect.Struct && !complexField(v.Field(i)) {
 			nested := ToMap(v.Field(i).Interface(), m.Tag, m.Omitempty, m.Flatten)
 			if field.Anonymous || m.Flatten {
 				// flatten nested structs
@@ -193,11 +203,40 @@ func isEmpty(v reflect.Value) bool {
 		if v.Type() == reflect.TypeOf(time.Time{}) {
 			return v.Interface().(time.Time).IsZero()
 		}
-		// fallthrough
+		return isSQLTypeEmpty(v)
 	case reflect.Interface, reflect.Ptr:
 		return v.IsNil()
 	}
+	// sql types
+
 	return false
+}
+
+func isSQLTypeEmpty(v reflect.Value) (empty bool) {
+	switch v.Type() {
+	case reflect.TypeOf(sql.NullString{}):
+		return !v.Interface().(sql.NullString).Valid
+	case reflect.TypeOf(sql.NullInt64{}):
+		return !v.Interface().(sql.NullInt64).Valid
+	case reflect.TypeOf(sql.NullFloat64{}):
+		return !v.Interface().(sql.NullFloat64).Valid
+	case reflect.TypeOf(sql.NullBool{}):
+		return !v.Interface().(sql.NullBool).Valid
+	case reflect.TypeOf(sql.NullTime{}):
+		return !v.Interface().(sql.NullTime).Valid
+	case reflect.TypeOf(sql.NullByte{}):
+		return !v.Interface().(sql.NullByte).Valid
+	case reflect.TypeOf(sql.NullInt32{}):
+		return !v.Interface().(sql.NullInt32).Valid
+	case reflect.TypeOf(sql.NullInt16{}):
+		return !v.Interface().(sql.NullInt16).Valid
+	case reflect.TypeOf(sql.NullByte{}):
+		return !v.Interface().(sql.NullByte).Valid
+	case reflect.TypeOf(sql.NullTime{}):
+		return !v.Interface().(sql.NullTime).Valid
+	default:
+		return false
+	}
 }
 
 // isExported returns true if the field is exported.

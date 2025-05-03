@@ -1,6 +1,7 @@
 package tagops
 
 import (
+	"database/sql"
 	"encoding/json"
 	"os"
 	"reflect"
@@ -87,6 +88,11 @@ func TestToMap(t *testing.T) {
 			Int       int       `db:"int_t,omitempty"`
 			Name      string    `db:"name"`
 			Nested
+		}
+
+		SqlNullString struct {
+			Name    string         `json:"name,omitempty"`
+			Surname sql.NullString `json:"surname,omitempty"`
 		}
 	)
 
@@ -242,6 +248,37 @@ func TestToMap(t *testing.T) {
 				"name":       "test",
 				"street":     "street",
 				"nested_int": 3,
+			},
+		},
+		{
+			name: "sql.NullString",
+			args: args{
+				a: SqlNullString{
+					Name:    "John",
+					Surname: sql.NullString{String: "Doe", Valid: true},
+				},
+				tag:       "json",
+				omitempty: true,
+				flatten:   true,
+			},
+			want: map[string]any{
+				"name":    "John",
+				"surname": sql.NullString{String: "Doe", Valid: true},
+			},
+		},
+		{
+			name: "sql.NullString with empty value",
+			args: args{
+				a: SqlNullString{
+					Name:    "John",
+					Surname: sql.NullString{String: "", Valid: false},
+				},
+				tag:       "json",
+				omitempty: true,
+				flatten:   true,
+			},
+			want: map[string]any{
+				"name": "John",
 			},
 		},
 	}
