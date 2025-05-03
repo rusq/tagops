@@ -263,7 +263,7 @@ func TestToMap(t *testing.T) {
 			},
 			want: map[string]any{
 				"name":    "John",
-				"surname": "Doe",
+				"surname": sql.NullString{String: "Doe", Valid: true},
 			},
 		},
 		{
