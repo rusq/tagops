@@ -82,6 +82,10 @@ func (m Mapper) ToMap(a any) map[string]any {
 		field := typ.Field(i)
 
 		if field.Type.Kind() == reflect.Struct && !complexField(v.Field(i)) {
+			_, err := tagName(field, v.Field(i), m.Tag, m.Omitempty)
+			if errors.Is(err, errSkip) {
+				continue
+			}
 			nested := ToMap(v.Field(i).Interface(), m.Tag, m.Omitempty, m.Flatten)
 			if field.Anonymous || m.Flatten {
 				// flatten nested structs

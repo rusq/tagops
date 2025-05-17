@@ -94,6 +94,16 @@ func TestToMap(t *testing.T) {
 			Name    string         `json:"name,omitempty"`
 			Surname sql.NullString `json:"surname,omitempty"`
 		}
+
+		SkipSimple struct {
+			Name string `json:"-"`
+			Age  int    `json:"age,omitempty"`
+		}
+
+		SkipNested struct {
+			ID     int        `json:"id,omitempty"`
+			Simple SkipSimple `json:"-"`
+		}
 	)
 
 	var testDate = time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -279,6 +289,39 @@ func TestToMap(t *testing.T) {
 			},
 			want: map[string]any{
 				"name": "John",
+			},
+		},
+		{
+			name: "skip simple",
+			args: args{
+				a: SkipSimple{
+					Name: "John",
+					Age:  42,
+				},
+				tag:       "json",
+				omitempty: false,
+				flatten:   true,
+			},
+			want: map[string]any{
+				"age": 42,
+			},
+		},
+		{
+			name: "skip nested",
+			args: args{
+				a: SkipNested{
+					ID: 1,
+					Simple: SkipSimple{
+						Name: "John",
+						Age:  42,
+					},
+				},
+				tag:       "json",
+				omitempty: false,
+				flatten:   true,
+			},
+			want: map[string]any{
+				"id": 1,
 			},
 		},
 	}
